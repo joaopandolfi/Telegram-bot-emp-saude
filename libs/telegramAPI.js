@@ -4,9 +4,10 @@
 * joaopandolfi@gmail.com
 */
 
-var apiKey = "bot544775994:AAFaUKkceHUSIh4lffSiorJ-ykvakJusMxU";
+var apiKey = "bot585720363:AAFAvAolyx-MljmrqFGHhsimqCzqbIsSnxU";
 var baseUrl = "https://api.telegram.org/{api}/{service}";
 var imageUrl = "https://api.telegram.org/file/{api}/{file}"
+var DEBUG = false
 
 /*
 	Get url base with Service
@@ -58,11 +59,11 @@ function consumeAPI(service,r_data,callback){
 	}
 	callUrl = encodeURI(callUrl);
 
-	console.log(callUrl);
+	//console.log(callUrl);
 
 	https.get(callUrl, function(res) {
   		
-  		console.log("Got response: " + res.statusCode);
+  		if(DEBUG) console.log("Got response: " + res.statusCode);
   		
   		if(res.statusCode == 404)
   			callback({success:0,error:404,data:{}});
@@ -75,7 +76,7 @@ function consumeAPI(service,r_data,callback){
 
 	  	res.on('end', function(e){
 
-	  		console.log("DEBUG: "+data);
+	  		if(DEBUG) console.log("DEBUG: "+data);
 
 			parsed = JSON.parse(data);
 			callback({success:1,error:0,data:parsed});

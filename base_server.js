@@ -2,6 +2,7 @@ const express = require('express')
 const bodyParser = require('body-parser')
 var exec = require('child_process').exec;
 var https = require('https');
+var localtunnel = require('localtunnel');
 
 var telegramAPI = require("./libs/telegramAPI.js");
 var interface = require("./libs/interface.js"); 
@@ -11,9 +12,24 @@ const messages = require("./constants/messages.js");
 const config = require("./constants/config.js");
 
 
+//Initializing Server
+const serverPort = 7821;
+
+//Config LocalTunnel
+console.log("Initialize Tunnel -->")
+var tunnel = localtunnel(serverPort,function(err, tunnel){
+	console.log("<-- Tunnel Ok")
+    if(err){
+        console.log("Erro no tunnel");
+        return;
+	}
+	console.log("Registering on Telegram Server")
+    data = [{key:"url=",value:tunnel.url+"/rest?"}]
+	telegramAPI.consumeAPI(servicesAPI.setWebhook,data,interface.show);
+});
+
 const app = express()
 app.use( bodyParser.json() );
-
 
 app.all('/test', function (req, res) {
 	//data = [{key:"text=",value:"Resposta automatica"},{key:"chat_id=",value:373552498}]
@@ -29,7 +45,7 @@ app.all('/test', function (req, res) {
 app.all('/rest', function (req, res) {
 	
 	//debug
-	console.log(req.body);
+	console.log("-->\n",req.body);
 	
 	//Verifica se e imagem
 	if(req.body.message.photo != undefined){
@@ -60,6 +76,7 @@ app.all('/rest', function (req, res) {
 										.replace("{path_out}",config.reverse_path+config.processed_path))
 						.replace("{id_image}",result.image_id)
 
+				//Executa rede Neural
 				exec(cmd, function(error, stdout, stderr) {
   					if(error == null){
   						//responseControl.responseImages(config.processed_path,telegramAPI.uploadImage);
@@ -83,61 +100,11 @@ app.all('/rest', function (req, res) {
 		
 	} //Chat
 	else{
+		_command = true
 		command = req.body.message.text.split(" ")
 		cmd = ""
 		switch(command[0]){
-			case "/status":
-				cmd = "ps aux |grep \"nodejs app.js\""
-			break
-
-			case "/log":
-				switch(command[1]){
-					case "prod":
-						cmd = "cat ../santadata/rest/nohup.out ; cat ../santadata/rest/out.txt"
-					break
-
-					case "test":
-						cmd = "cat ../test/rest/nohup.out ; cat ../test/rest/out.txt"
-					break
-				}
-				
-			break
-
-
-			case "/kill":
-				cmd = "kill -9 {id_process}"
-				cmd = cmd.replace("{id_process}",command[1])
-			break
-
-			case "/start":
-				switch(command[1]){
-					case "test":
-						cmd = "cd ../test/rest/ ; ./run.sh ; echo Ok"
-					break
-
-					case "prod":
-						cmd = "cd ../santadata/rest/ ; ./run.sh ; echo Ok"
-					break;
-				}
-			break
 			
-			case "/git":
-				switch(command[1]){
-					case "test":
-						cmd = "cd ../test/rest/ ; git pull origin rest -q ; echo Ok"
-					break
-
-					case "prod":
-						cmd = "cd ../santadata/rest/ ; git pull origin rest -q ; echo Ok"
-					break
-					
-					case "front":
-						cmd = "cd ../front/santadata/front/ ; git pull origin develop -q ; echo Ok"
-					break
-
-				}
-			break
-
 			case "/eai":
 				msg = "E lá vamos nós..."
 				data = [{key:"text=",value:msg},{key:"parse_mode=",value:"Markdown"},{key:"chat_id=",value:req.body.message.chat.id}]
@@ -150,32 +117,30 @@ app.all('/rest', function (req, res) {
 					console.log("IMAGE DATA: "+result.photo)
   					});
 			break;
-
-			case "/calmai":
-				//Sending Image
-				data_file = {path_img:config.tut_troll_path,chat_id:req.body.message.chat.id}
-  				telegramAPI.uploadImage(data_file,function(result){
-					//console.log(chat_id)
-					console.log(result)
-					console.log("IMAGE DATA: "+result.photo)
-  					});
-			break;
-
 			case "/help":
-				msg = "/status -> *Exibe processos* \n/start _<test,prod>_ -> *Inicia servidor*  \n/git _<test,prod,front>_ -> *Atualiza servidor* \n/kill _<id>_ -> *Mata processo* \n/log _<test,prod>_ -> *Exibe log*"
-				data = [{key:"text=",value:msg},{key:"parse_mode=",value:"Markdown"},{key:"chat_id=",value:req.body.message.chat.id}]
+				data = [{key:"text=",value:messages.help},{key:"parse_mode=",value:"Markdown"},{key:"chat_id=",value:req.body.message.chat.id}]
 				telegramAPI.consumeAPI(servicesAPI.sendMessage,data,interface.show);	
 			break
 
-			default:
-				data = [{key:"text=",value:messages.default.replace("{name}",req.body.message.from.first_name)},{key:"chat_id=",value:req.body.message.chat.id}]
+			case "/learn":
+				//AQUI ENSINA A RNA
+				data = [{key:"text=",value:messages.learn},{key:"chat_id=",value:req.body.message.chat.id}]
 				telegramAPI.consumeAPI(servicesAPI.sendMessage,data,interface.show);
 
 			break
+
+			case "/start":
+				data = [{key:"text=",value:messages.hello.replace("{name}",req.body.message.from.first_name)},{key:"chat_id=",value:req.body.message.chat.id}]
+				telegramAPI.consumeAPI(servicesAPI.sendMessage,data,interface.debug);
+			break;
+
+			default:
+			_command = false
 		}
 
-    	chat_id = req.body.message.chat.id
-		if(cmd != "")
+		//Executa comando do terminal
+		if(cmd != ""){
+			chat_id = req.body.message.chat.id
 			exec(cmd,function(error, stdout, stderr) {	
 				msg = stdout
 				if(error != null){
@@ -187,24 +152,36 @@ app.all('/rest', function (req, res) {
     		msg = msg.replace(/#/g, '-');
 			telegramAPI.sendLongMessage(servicesAPI.sendMessage,msg,chat_id,interface.show)
 			})
+		}
 		
+		//User Sendend Message
+		message = req.body.message.text
+		data = null
+		if(!_command) switch(message){
+			case "oi":
+			case "Oi":
+			case "Ola":
+			case "Olá" :
+				data = [{key:"text=",value:messages.hello.replace("{name}",req.body.message.from.first_name)},{key:"chat_id=",value:req.body.message.chat.id}]
+			break;
 
+			case "beleza":
+			case "Beleza":
+				data = [{key:"text=",value:messages.blz},{key:"chat_id=",value:req.body.message.chat.id}]
+			break;
 
-		if(req.body.message.text == "beleza" || req.body.message.text == "Beleza"){
-			data = [{key:"text=",value:messages.blz},{key:"chat_id=",value:req.body.message.chat.id}]
-			telegramAPI.consumeAPI(servicesAPI.sendMessage,data,interface.show);		
+			default:
+				//Aqui chamaria a RNA para responder
+				data = [{key:"text=",value:messages.default.replace("{name}",req.body.message.from.first_name)},{key:"chat_id=",value:req.body.message.chat.id}]
+			break
+
 		}
-
-		else if(req.body.message.text == "/start"){
-			data = [{key:"text=",value:messages.hello.replace("{name}",req.body.message.from.first_name)},{key:"chat_id=",value:req.body.message.chat.id}]
-			telegramAPI.consumeAPI(servicesAPI.sendMessage,data,interface.show);
-
-			//data_file = [{key:"photo=",value:config.tut_img_id},{key:"chat_id=",value:req.body.message.chat.id}]
-			//telegramAPI.consumeAPI(servicesAPI.sendPhoto,data_file,interface.show);
-		}
+		
+		//responde
+		if(data) telegramAPI.consumeAPI(servicesAPI.sendMessage,data,interface.debug);
 	}
 	
-	console.log("ok")
+	console.log("<-- ok")
   	res.send('Ok')
 })
 
