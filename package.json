@@ -1,8 +1,8 @@
 {
-  "name": "Santa-data-Bot-server",
-  "version": "1.0.0",
-  "description": "Santa data bot server",
-  "main": "app.js",
+  "name": "Chatbot-Empreenda-Saude",
+  "version": "1.0.1",
+  "description": "Empreenda saúde chatbot server",
+  "main": "base_server.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
