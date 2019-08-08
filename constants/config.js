@@ -10,7 +10,7 @@ module.exports = {
 	
 	//Images
 	tut_img_path: "files/tutorial.png",
-	tut_question_path: "files/elavamosnos.jpg",
+	tut_question_path: "./files/elavamosnos.jpg",
 	tut_troll_path: "files/fuitapeado.jpg",
 	//Id Tutorial Image
 	tut_img_id: "AgADAQADvKcxG_YDuEbFeXgYtbq9ubYU9y8ABEYBMoRRmxRDvfUAAgI",

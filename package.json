@@ -13,9 +13,8 @@
     "body-parser": "^1.18.2",
     "express": "^4.16.1",
     "https": "^1.0.0",
-    "localtunnel": "^1.9.0",
+    "localtunnel": "^1.9.2",
     "mysql": "^2.14.1",
-    "node-webhooks": "^1.2.4",
-    "superagent": "^3.6.3"
+    "superagent": "^5.1.0"
   }
 }
