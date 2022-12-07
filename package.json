@@ -10,8 +10,8 @@
   "author": "João Carlos Pandolfi Santana",
   "license": "ISC",
   "dependencies": {
-    "body-parser": "^1.18.2",
-    "express": "^4.16.1",
+    "body-parser": "^1.20.1",
+    "express": "^4.18.2",
     "https": "^1.0.0",
     "localtunnel": "^1.9.2",
     "mysql": "^2.14.1",
